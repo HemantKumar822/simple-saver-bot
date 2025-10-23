@@ -1,18 +1,33 @@
-# Базовые зависимости (обычная установка)
-# pyrogram is outdated; switch to actively maintained PyroTGFork
-pyrotgfork
-requests<3,>=2.8.1
+# Railway-optimized requirements for Simple Saver Bot
+# Core dependencies
+pyrotgfork>=2.0.0
 TgCrypto>=1.2.5
-moviepy==1.0.3
-tldextract
-pillow
-chardet
-sdnotify
-firebase-admin
-bgutil-ytdlp-pot-provider
 
-# Только для yt-dlp — разрешить пре-релизы и переустановить «с нуля»
---pre
-yt-dlp[default,curl-cffi]
-# Gallery-dl для скачивания картинок
-gallery-dl
+# HTTP and requests
+requests>=2.28.0,<3.0.0
+
+# Media processing
+moviepy==1.0.3
+Pillow>=9.0.0
+
+# URL processing
+tldextract>=3.0.0
+
+# Character encoding
+chardet>=5.0.0
+
+# System monitoring (optional for Railway)
+sdnotify>=0.3.0
+
+# Firebase (optional - not used in Railway)
+firebase-admin>=6.0.0
+
+# yt-dlp with all features
+yt-dlp[default,curl-cffi]>=2023.0.0
+
+# Gallery-dl for images
+gallery-dl>=1.25.0
+
+# Railway-specific optimizations
+gunicorn>=20.0.0
+psycopg2-binary>=2.9.0  # For potential PostgreSQL use

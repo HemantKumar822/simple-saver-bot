@@ -128,6 +128,35 @@ from COMMANDS.cookies_cmd import download_cookie
 # DOWN_AND_UP (с обработчиками - импортируем после установки app)
 from DOWN_AND_UP.always_ask_menu import *
 
+###########################################################
+#        RAILWAY OPTIMIZATIONS
+###########################################################
+
+# Railway environment detection
+IS_RAILWAY = os.getenv('RAILWAY_ENVIRONMENT') is not None
+
+if IS_RAILWAY:
+    print("🚂 Running on Railway - applying optimizations...")
+
+    # Create necessary directories for Railway
+    os.makedirs("database/simplesaver", exist_ok=True)
+    os.makedirs("database/video_cache", exist_ok=True)
+    os.makedirs("database/video_cache/playlists", exist_ok=True)
+    os.makedirs("database/video_cache/images", exist_ok=True)
+    os.makedirs("users", exist_ok=True)
+    os.makedirs("logs", exist_ok=True)
+
+    # Railway-specific logging
+    import logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler('logs/bot.log', mode='a')
+        ]
+    )
+
 print(get_messages_instance().MAGIC_ALL_MODULES_LOADED_MSG)
 
 ###########################################################

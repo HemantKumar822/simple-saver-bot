@@ -1,11 +1,11 @@
-# Messages Configuration
+# Messages Configuration - Simple Saver Bot
 
 class Messages(object):
     #######################################################
     # Messages and errors
     #######################################################
-    CREDITS_MSG = "<blockquote><i>Managed by</i> @iilililiiillliiliililliilliliiil\n🇮🇹 @tgytdlp_it_bot\n🇦🇪 @tgytdlp_uae_bot\n🇬🇧 @tgytdlp_uk_bot\n🇫🇷 @tgytdlp_fr_bot</blockquote>"
-    TO_USE_MSG = "<i>To use this bot you need to subscribe to @tg_ytdlp Telegram channel.</i>\nAfter you join the channel, <b>resend your video link again and bot will download it for you</b> ❤️  "
+    CREDITS_MSG = "<blockquote><i>Made with ❤️ by Hemant Kumar</i> @hemantkumar822\n<b>Simple Saver</b> - Your hassle-free download companion</blockquote>"
+    TO_USE_MSG = ""  # No subscription required
 
     ERROR1 = "Did not found a url link. Please enter a url with <b>https://</b> or <b>http://</b>"
 
@@ -79,76 +79,41 @@ Use <code>/img URL</code> to download images/photos/albums from many platforms.
 </blockquote>
 """
     HELP_MSG = """
-🎬 <b>Video Download Bot - Help</b>
+<b>Welcome to Simple Saver! 👋</b>
 
-📥 <b>Basic Usage:</b>
-• Send any link → bot downloads it
-  <i>the bot automatically tries to download videos via yt-dlp and images via gallery-dl.</i>
-• <code>/audio URL</code> → extract audio
-• <code>/link [quality] URL</code> → get direct links
-• <code>/proxy</code> → enable/disable proxy for all downloads
-• Reply to video with text → change caption
+Send me any <b>YouTube</b>, <b>Instagram</b>, <b>Threads</b>, or <b>TikTok</b> link and I'll quickly fetch and deliver the video or image directly to you.
 
-📋 <b>Playlists & Ranges:</b>
-• <code>URL*1*5</code> → download videos 1-5
-• <code>/vid 3-7 URL</code> → becomes <code>URL*3*7</code>
+📥 <b>How to Use:</b>
+• Simply send any link - I'll download it automatically
+• <code>/audio URL</code> - Extract audio only
+• <code>/img URL</code> - Download images from Instagram, Threads
+• <code>/format</code> - Choose video quality
+• <code>/settings</code> - Customize your preferences
 
-🍪 <b>Cookies & Private:</b>
-• Upload *.txt cookie for private videos
-• <code>/cookie [service]</code> → download cookies (youtube/tiktok/x/custom)
-• <code>/cookie youtube 1</code> → pick source by index (1–N)
-• <code>/cookies_from_browser</code> → extract from browser
-• <code>/check_cookie</code> → verify cookie
-• <code>/save_as_cookie</code> → save text as cookie
+🎯 <b>Supported Platforms:</b>
+✅ YouTube (videos, shorts, playlists)
+✅ Instagram (posts, reels, stories)
+✅ Threads (videos & images)
+✅ TikTok (videos & profiles)
+✅ And 1500+ more sites!
 
-🧹 <b>Cleaning:</b>
-• <code>/clean</code> → media files only
-• <code>/clean all</code> → everything
-• <code>/clean cookies/logs/tags/format/split/mediainfo/sub/keyboard</code>
+⚙️ <b>Quick Settings:</b>
+• <code>/format 720p</code> - Set video quality
+• <code>/split 500mb</code> - Split large videos
+• <code>/mediainfo on</code> - Show video details
+• <code>/clean</code> - Clean your files
 
-⚙️ <b>Settings:</b>
-• <code>/settings</code> → settings menu
-• <code>/format</code> → quality & format
-• <code>/split</code> → split video into parts
-• <code>/mediainfo on/off</code> → media info
-• <code>/nsfw on/off</code> → NSFW blur
-• <code>/tags</code> → view saved tags
-• <code>/sub on/off</code> → subtitles
-• <code>/keyboard</code> → keyboard (OFF/1x3/2x3)
+� <b>For Playlists:</b>
+• <code>URL*1*5</code> - Download videos 1-5
+• <code>/vid 3-7 URL</code> - Download range 3-7
 
-🏷️ <b>Tags:</b>
-• Add <code>#tag1#tag2</code> after URL
-• Tags appear in captions
-• <code>/tags</code> → view all tags
+� <b>Pro Tips:</b>
+• Reply to any video with text to change caption
+• Add <code>#tags</code> after URLs for organization
+• Use <code>/usage</code> to see your download history
 
-🔗 <b>Direct Links:</b>
-• <code>/link URL</code> → best quality
-• <code>/link [144-4320]/720p/1080p/4k/8k URL</code> → specific quality
-
-⚙️ <b>Quick Commands:</b>
-• <code>/format [144-4320]/720p/1080p/4k/8k/best/ask/id 134</code> → set quality
-• <code>/keyboard off/1x3/2x3/full</code> → keyboard layout
-• <code>/split 100mb-2000mb</code> → change part size
-• <code>/subs off/ru/en auto</code> → subtitle language
-• <code>/list URL</code> → список доступных форматов
-• <code>/mediainfo on/off</code> → on/off media info
-• <code>/proxy on/off</code> → enable/disable proxy for all downloads
-
-📊 <b>Info:</b>
-• <code>/usage</code> → download history
-• <code>/search</code> → inline search via @vid
-
-🖼 <b>Images:</b>
-• <code>URL</code> → download images URL
-• <code>/img URL</code> → download images from URL
-• <code>/img 11-20 URL</code> → download specific range
-• <code>/img 11- URL</code> → download from 11th to the end
-
-<blockquote expandable>🇷🇺 <b>Бот для скачивания видео - Помощь</b>
-
-📥 <b>Основное:</b>
-• Отправьте любую ссылку → бот скачает её
-  <i>бот автоматически попробует скачать видео через yt-dlp и изображения через gallery-dl.</i>
+<i>Built for hassle-free downloading.</i>
+Made by <b>Hemant Kumar</b> @hemantkumar822
 • <code>/audio URL</code> → аудио
 • <code>/link [качество] URL</code> → прямые ссылки
 • <code>/proxy</code> → включить/выключить прокси для всех загрузок

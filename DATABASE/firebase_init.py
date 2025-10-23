@@ -4,11 +4,17 @@ import threading
 import os
 from typing import Any, Dict, List, Optional
 
-import requests
-from requests import Session
-from requests.adapters import HTTPAdapter
-import firebase_admin
-from firebase_admin import credentials, db as admin_db
+# Try to import Firebase, but don't fail if not available
+try:
+    import requests
+    from requests import Session
+    from requests.adapters import HTTPAdapter
+    import firebase_admin
+    from firebase_admin import credentials, db as admin_db
+    FIREBASE_AVAILABLE = True
+except ImportError:
+    FIREBASE_AVAILABLE = False
+    print("⚠️ Firebase not available - using local database")
 
 from CONFIG.config import Config
 from CONFIG.messages import Messages, get_messages_instance
@@ -16,13 +22,66 @@ from HELPERS.logger import logger
 from HELPERS.filesystem_hlp import create_directory
 from HELPERS.logger import send_to_all
 
+# Try to use local database if Firebase is disabled
+USE_LOCAL_DB = getattr(Config, 'USE_FIREBASE', True) == False or not FIREBASE_AVAILABLE
+
+if USE_LOCAL_DB:
+    print("✅ Using local database (no Firebase required)")
+    try:
+        from DATABASE.local_db import DatabaseReference as LocalDatabaseReference, get_database
+        _local_db = get_database()
+    except ImportError:
+        print("❌ local_db.py not found - creating minimal implementation")
+        class LocalDatabaseReference:
+            def __init__(self, path=""):
+                self.path = path
+                self.data = {}
+            def child(self, *args):
+                new_path = f"{self.path}/{'/'.join(str(a) for a in args)}".strip('/')
+                ref = LocalDatabaseReference(new_path)
+                ref.data = self.data
+                return ref
+            def get(self):
+                class Snapshot:
+                    def __init__(self, val):
+                        self._val = val
+                    def val(self):
+                        return self._val
+                    def each(self):
+                        if isinstance(self._val, dict):
+                            class Child:
+                                def __init__(self, k, v):
+                                    self._k = k
+                                    self._v = v
+                                def key(self):
+                                    return self._k
+                                def val(self):
+                                    return self._v
+                            return [Child(k, v) for k, v in self._val.items()]
+                        return None
+                return Snapshot(self.data.get(self.path, {}))
+            def set(self, data):
+                self.data[self.path] = data
+            def update(self, data):
+                if self.path not in self.data:
+                    self.data[self.path] = {}
+                if isinstance(self.data[self.path], dict):
+                    self.data[self.path].update(data)
+            def remove(self):
+                if self.path in self.data:
+                    del self.data[self.path]
+        _local_db = LocalDatabaseReference()
+
 # Global variable for timing
 starting_point = []
 
 
 def _get_database_url() -> str:
+    """Get database URL from config (only needed for Firebase)"""
+    if USE_LOCAL_DB:
+        return None  # Not needed for local database
     try:
-        database_url_local = Config.FIREBASE_CONF.get("databaseURL")
+        database_url_local = Config.FIREBASE_CONF.get("databaseURL") if Config.FIREBASE_CONF else None
     except Exception:
         database_url_local = None
     if not database_url_local:
@@ -37,6 +96,9 @@ def _init_firebase_admin_if_needed() -> bool:
     Prefers credentials from GOOGLE_APPLICATION_CREDENTIALS or
     Config.FIREBASE_SERVICE_ACCOUNT (path to service account JSON).
     """
+    if USE_LOCAL_DB or not FIREBASE_AVAILABLE:
+        return False  # Skip Firebase initialization
+    
     if firebase_admin._apps:
         return True
 
@@ -296,47 +358,55 @@ class RestDBAdapter:
                 pass
 
 
-# Initialize db adapter (admin or REST fallback)
-use_admin = _init_firebase_admin_if_needed()
-if use_admin:
-    db = FirebaseDBAdapter("/")
+# Initialize db adapter (local or Firebase)
+if USE_LOCAL_DB:
+    # Use local database
+    print("✅ Initialized local database (Simple Saver Bot)")
+    db = _local_db
+elif FIREBASE_AVAILABLE:
+    # Initialize Firebase db adapter (admin or REST fallback)
+    use_admin = _init_firebase_admin_if_needed()
+    if use_admin:
+        db = FirebaseDBAdapter("/")
+    else:
+        database_url = _get_database_url()
+        api_key = getattr(Config, "FIREBASE_CONF", {}).get("apiKey")
+        if not api_key:
+            raise RuntimeError("FIREBASE_CONF.apiKey отсутствует — нужен для REST аутентификации")
+        # Sign in via REST using session
+        auth_session = Session()
+        auth_session.headers.update({
+            'User-Agent': 'tg-ytdlp-bot/1.0',
+            'Connection': 'keep-alive'
+        })
+        # Configure connection pool for auth session
+        auth_adapter = HTTPAdapter(
+            pool_connections=5,   # Number of connection pools to cache
+            pool_maxsize=10,      # Maximum number of connections in each pool
+            max_retries=3,        # Number of retries for failed requests
+            pool_block=False      # Don't block when pool is full
+        )
+        auth_session.mount('http://', auth_adapter)
+        auth_session.mount('https://', auth_adapter)
+        try:
+            auth_url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}"
+            resp = auth_session.post(auth_url, json={
+                "email": getattr(Config, "FIREBASE_USER", None),
+                "password": getattr(Config, "FIREBASE_PASSWORD", None),
+                "returnSecureToken": True,
+            }, timeout=60)
+            resp.raise_for_status()
+            payload = resp.json()
+            id_token = payload.get("idToken")
+            refresh_token = payload.get("refreshToken")
+            if not id_token:
+                raise RuntimeError("Не удалось получить idToken через REST аутентификацию")
+            logger.info("✅ REST Firebase auth successful")
+            db = RestDBAdapter(database_url, id_token, refresh_token, api_key, "/")
+        finally:
+            auth_session.close()
 else:
-    database_url = _get_database_url()
-    api_key = getattr(Config, "FIREBASE_CONF", {}).get("apiKey")
-    if not api_key:
-        raise RuntimeError("FIREBASE_CONF.apiKey отсутствует — нужен для REST аутентификации")
-    # Sign in via REST using session
-    auth_session = Session()
-    auth_session.headers.update({
-        'User-Agent': 'tg-ytdlp-bot/1.0',
-        'Connection': 'keep-alive'
-    })
-    # Configure connection pool for auth session
-    auth_adapter = HTTPAdapter(
-        pool_connections=5,   # Number of connection pools to cache
-        pool_maxsize=10,      # Maximum number of connections in each pool
-        max_retries=3,        # Number of retries for failed requests
-        pool_block=False      # Don't block when pool is full
-    )
-    auth_session.mount('http://', auth_adapter)
-    auth_session.mount('https://', auth_adapter)
-    try:
-        auth_url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}"
-        resp = auth_session.post(auth_url, json={
-            "email": getattr(Config, "FIREBASE_USER", None),
-            "password": getattr(Config, "FIREBASE_PASSWORD", None),
-            "returnSecureToken": True,
-        }, timeout=60)
-        resp.raise_for_status()
-        payload = resp.json()
-        id_token = payload.get("idToken")
-        refresh_token = payload.get("refreshToken")
-        if not id_token:
-            raise RuntimeError("Не удалось получить idToken через REST аутентификацию")
-        logger.info("✅ REST Firebase auth successful")
-        db = RestDBAdapter(database_url, id_token, refresh_token, api_key, "/")
-    finally:
-        auth_session.close()
+    raise RuntimeError("Neither local database nor Firebase is available!")
 
 
 def db_child_by_path(db_adapter: FirebaseDBAdapter, path: str) -> FirebaseDBAdapter:

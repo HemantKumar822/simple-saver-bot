@@ -89,8 +89,14 @@ def send_to_logger(message, msg):
     user_id = message.chat.id
     msg_with_id = f"{message.chat.first_name} - {user_id}\n \n{msg}"
     # Print (user_id, "-", msg)
-    safe_send_message(get_log_channel("general"), msg_with_id,
-                     parse_mode=enums.ParseMode.HTML)
+    log_channel = get_log_channel("general")
+    # Only send if log channel is configured
+    if log_channel:
+        safe_send_message(log_channel, msg_with_id,
+                         parse_mode=enums.ParseMode.HTML)
+    else:
+        # Just log to file
+        logger.info(f"[LOG] {msg_with_id}")
 
 # Send Message to User Only
 
@@ -103,7 +109,13 @@ def send_to_user(message, msg):
 def send_to_all(message, msg):
     user_id = message.chat.id
     msg_with_id = f"{message.chat.first_name} - {user_id}\n \n{msg}"
-    safe_send_message(get_log_channel("general"), msg_with_id, parse_mode=enums.ParseMode.HTML)
+    log_channel = get_log_channel("general")
+    # Only send to log channel if configured
+    if log_channel:
+        safe_send_message(log_channel, msg_with_id, parse_mode=enums.ParseMode.HTML)
+    else:
+        # Just log to file
+        logger.info(f"[LOG] {msg_with_id}")
     safe_send_message(user_id, msg, parse_mode=enums.ParseMode.HTML, message=message)
 
 # --- Helpers for error logging -------------------------------------------------
@@ -132,8 +144,12 @@ def send_error_to_user(message, msg, url: str = None):
         msg_with_id = f"{message.chat.first_name} - {user_id}\n \nURL: {url_str}\n\n{msg}"
     else:
         msg_with_id = f"{message.chat.first_name} - {user_id}\n \n{msg}"
-    # Send to LOG_EXCEPTION channel for error tracking
-    safe_send_message(Config.LOG_EXCEPTION, msg_with_id, parse_mode=enums.ParseMode.HTML)
+    # Send to LOG_EXCEPTION channel for error tracking (if configured)
+    if Config.LOG_EXCEPTION:
+        safe_send_message(Config.LOG_EXCEPTION, msg_with_id, parse_mode=enums.ParseMode.HTML)
+    else:
+        # Just log to file
+        logger.error(f"[ERROR] {msg_with_id}")
     # Send to user
     safe_send_message(user_id, msg, parse_mode=enums.ParseMode.HTML, message=message)
 
@@ -150,5 +166,9 @@ def log_error_to_channel(message, msg, url: str = None):
         msg_with_id = f"{message.chat.first_name} - {user_id}\n \nURL: {url_str}\n\n{msg}"
     else:
         msg_with_id = f"{message.chat.first_name} - {user_id}\n \n{msg}"
-    # Send to LOG_EXCEPTION channel for error tracking
-    safe_send_message(Config.LOG_EXCEPTION, msg_with_id, parse_mode=enums.ParseMode.HTML)
+    # Send to LOG_EXCEPTION channel for error tracking (if configured)
+    if Config.LOG_EXCEPTION:
+        safe_send_message(Config.LOG_EXCEPTION, msg_with_id, parse_mode=enums.ParseMode.HTML)
+    else:
+        # Just log to file
+        logger.error(f"[ERROR] {msg_with_id}")
